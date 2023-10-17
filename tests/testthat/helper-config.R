@@ -1,3 +1,5 @@
+# this file will load before any tests using thatthat package
+
 ### lib
 library(golem)
 library(withr)
@@ -43,6 +45,7 @@ expect_exists <- function(fls) {
   invisible(act$val)
 }
 
+# runs exp and deletes file
 burn_after_reading <- function(file, exp) {
   unlink(file, force = TRUE)
   force(exp)
@@ -55,29 +58,46 @@ safe_let <- function() {
   letters[-c(5, 9, 18, 19, 21, 22)]
 }
 
-## fake package
+## name a fake package with a randomly assigned name
 fakename <- sprintf(
   "%s%s",
   paste0(sample(safe_let(), 10, TRUE), collapse = ""),
   gsub("[ :-]", "", Sys.time())
 )
 
+rand_name <- function() {
+  paste0(sample(safe_let(), 10, TRUE), collapse = "")
+}
 
-## random dir
-randir <- paste0(sample(safe_let(), 10, TRUE), collapse = "")
 
+create_deploy_folder <- function(){
+  file.path(
+    tempdir(),
+    make.names(
+      paste0(
+        "deploy",
+        round(
+          runif(1, min = 0, max = 99999)
+        )
+      )
+    )
+  )
+}
+
+
+
+## create a golem package with name 'fakename' in a tempdir
 tpdir <- normalizePath(tempdir())
 unlink(file.path(tpdir, fakename), recursive = TRUE)
 create_golem(file.path(tpdir, fakename), open = FALSE)
 pkg <- file.path(tpdir, fakename)
 
+## populate the 'inst/app' subfolder of golem package
+randir <- paste0(sample(safe_let(), 10, TRUE), collapse = "")
 fp <- file.path("inst/app", randir)
 dir.create(file.path(pkg, fp), recursive = TRUE)
 
-rand_name <- function() {
-  paste0(sample(safe_let(), 10, TRUE), collapse = "")
-}
-
+# set pkg and working dir. run set_golem_options,use_mit_license
 withr::with_dir(pkg, {
   # Some weird things with {here}
   unloadNamespace("here")
@@ -95,16 +115,3 @@ withr::with_dir(pkg, {
 })
 
 
-create_deploy_folder <- function(){
-file.path(
-    tempdir(),
-    make.names(
-      paste0(
-        "deploy",
-        round(
-          runif(1, min = 0, max = 99999)
-        )
-      )
-    )
-  )
-}
